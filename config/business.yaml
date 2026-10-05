@@ -1,0 +1,15 @@
+# Configuración del negocio — Plantilla base
+negocio:
+  nombre: "Tu Negocio"
+  descripcion: "Plataforma de atención y ventas automatizadas por WhatsApp con IA"
+  horario: "Lunes a Viernes 9am a 6pm"
+
+agente:
+  nombre: "Asistente"
+  tono: "amigable"
+  casos_de_uso:
+    - "atencion_al_cliente"
+    - "ventas"
+
+metadata:
+  version: "2.0"

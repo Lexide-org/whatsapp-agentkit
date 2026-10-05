@@ -1,10 +1,33 @@
-# Secretos — NUNCA subir a GitHub
+# Secretos y variables de entorno — NUNCA subir a GitHub
 .env
+.env.*
+!.env.example
 
-# Base de datos local
+# Base de datos SQLite
 *.db
 *.sqlite
 *.sqlite3
+agentkit.db
+
+# Node.js
+node_modules/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Base de conocimiento privada del cliente
+client/knowledge/*
+!client/knowledge/README.md
+!client/knowledge/.gitkeep
+knowledge/*
+!knowledge/.gitkeep
+
+# Logs y archivos temporales
+*.log
+cookies.txt
+session_cookies.txt
+temp_repo/
 
 # Python
 __pycache__/
@@ -14,37 +37,12 @@ __pycache__/
 venv/
 env/
 *.egg-info/
-dist/
-build/
 
-# Knowledge (archivos privados del negocio)
-knowledge/*
-!knowledge/.gitkeep
-
-# Archivos generados por Claude Code durante onboarding
-agent/
-config/
-tests/
-requirements.txt
-Dockerfile
-docker-compose.yml
-
-# Session state
-config/session.yaml
-
-# OS
+# Archivos del sistema operativo y editores
 .DS_Store
 Thumbs.db
-
-# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-
-# Docker
-.dockerignore
-
-# Node (si se usa para Claude Code)
-node_modules/

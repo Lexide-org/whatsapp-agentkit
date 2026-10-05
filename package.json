@@ -1,0 +1,47 @@
+{
+  "name": "tabersil-chatbots",
+  "version": "2.0.0",
+  "description": "Tabersil Chatbots - WhatsApp AI & CRM Platform (Node.js + React)",
+  "main": "server/index.js",
+  "type": "module",
+  "scripts": {
+    "dev:server": "node server/index.js",
+    "dev:client": "vite",
+    "dev": "concurrently -k -n \"SERVER,CLIENT\" -c \"blue,green\" \"npm run dev:server\" \"npm run dev:client\"",
+    "build": "vite build",
+    "start": "node server/index.js",
+    "preview": "vite preview",
+    "client:reset": "node scripts/reset-client.js",
+    "client:wipe": "node scripts/reset-client.js --restore-template"
+  },
+  "keywords": [
+    "whatsapp",
+    "chatbot",
+    "crm",
+    "gemini",
+    "react",
+    "nodejs",
+    "tabersil"
+  ],
+  "author": "Tabersil Studios",
+  "license": "MIT",
+  "dependencies": {
+    "@google/genai": "^2.25.0",
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "js-yaml": "^4.1.0",
+    "lucide-react": "^0.475.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.2",
+    "vite": "^6.1.0"
+  }
+}
