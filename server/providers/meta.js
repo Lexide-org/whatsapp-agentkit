@@ -11,9 +11,9 @@ export class MetaProvider {
    * Meta requiere verificación GET con hub.challenge.
    */
   validateWebhook(query) {
-    const mode = query['hub.mode'];
-    const token = query['hub.verify_token'];
-    const challenge = query['hub.challenge'];
+    const mode = query['hub.mode'] || query['hub_mode'];
+    const token = query['hub.verify_token'] || query['hub_verify_token'];
+    const challenge = query['hub.challenge'] || query['hub_challenge'];
 
     if (mode === 'subscribe' && token === this.verifyToken) {
       return challenge;

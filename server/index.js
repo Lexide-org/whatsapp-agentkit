@@ -138,25 +138,27 @@ app.get('/sw.js', (req, res) => {
 // Webhooks de WhatsApp (Twilio / Meta)
 // -------------------------------------------------------------
 app.get('/webhook', (req, res) => {
-  const mode = req.query['hub.mode'];
-  const token = req.query['hub.verify_token'];
-  const challenge = req.query['hub.challenge'];
+  const mode = req.query['hub.mode'] || req.query['hub_mode'];
+  const token = req.query['hub.verify_token'] || req.query['hub_verify_token'];
+  const challenge = req.query['hub.challenge'] || req.query['hub_challenge'];
   const verifyToken = process.env.META_VERIFY_TOKEN || 'agentkit-verify';
 
-  // Verificación oficial de Meta Cloud API
+  // Verificación oficial de Meta Cloud API (requiere Content-Type: text/plain y 200 OK)
   if (mode === 'subscribe') {
     if (token === verifyToken) {
       console.log('✅ Webhook de Meta verificado con éxito');
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
       return res.status(200).send(String(challenge));
     }
     console.warn(`❌ Token de verificación de Meta inválido: recibido "${token}", esperado "${verifyToken}"`);
-    return res.status(403).send('Forbidden: Token de verificación incorrecto');
+    return res.status(403).send('Forbidden');
   }
 
   if (typeof provider.validateWebhook === 'function') {
     const customChallenge = provider.validateWebhook(req.query);
     if (customChallenge !== null && customChallenge !== undefined) {
-      return res.send(String(customChallenge));
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      return res.status(200).send(String(customChallenge));
     }
   }
 
