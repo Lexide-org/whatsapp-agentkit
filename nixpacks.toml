@@ -1,0 +1,14 @@
+# nixpacks.toml — Configuración de compilación y ejecución en Railway
+# Tabersil Chatbots Platform (Node.js + Express + React CRM)
+
+[phases.setup]
+nixPkgs = ["nodejs_22"]
+
+[phases.install]
+cmds = ["npm install"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[start]
+cmd = "npm start"

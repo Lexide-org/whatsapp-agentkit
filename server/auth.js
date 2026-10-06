@@ -64,7 +64,7 @@ export function verifySessionToken(token) {
 /**
  * Middleware para rutas protegidas del CRM.
  */
-export function requireAdmin(req, res, next) {
+export async function requireAdmin(req, res, next) {
   let token = req.cookies?.[COOKIE_NAME];
 
   if (!token && req.headers.authorization?.startsWith('Bearer ')) {
@@ -80,7 +80,7 @@ export function requireAdmin(req, res, next) {
     return res.status(401).json({ detail: 'Sesión inválida o expirada' });
   }
 
-  const admin = getAdminByUsername(username);
+  const admin = await getAdminByUsername(username);
   if (!admin) {
     return res.status(401).json({ detail: 'Usuario no encontrado' });
   }

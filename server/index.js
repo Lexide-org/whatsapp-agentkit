@@ -29,8 +29,8 @@ import {
 import { generateAiReply } from './brain.js';
 import { getWhatsAppProvider } from './providers/index.js';
 
-// Inicializar base de datos SQLite
-initDb();
+// Inicializar base de datos (PostgreSQL o SQLite)
+await initDb();
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '8000', 10);
@@ -156,7 +156,7 @@ app.post('/webhook', async (req, res) => {
       if (msg.esPropio) continue;
 
       // 1. Deduplicación
-      if (msg.mensajeId && isMessageDuplicate(msg.mensajeId)) {
+      if (msg.mensajeId && (await isMessageDuplicate(msg.mensajeId))) {
         console.log(`⚠️ Mensaje duplicado omitido: ${msg.mensajeId}`);
         continue;
       }
@@ -164,7 +164,7 @@ app.post('/webhook', async (req, res) => {
       console.log(`📩 Mensaje entrante de ${msg.telefono}: "${msg.texto}"`);
 
       // 2. Guardar mensaje del cliente
-      saveMessage({
+      await saveMessage({
         telefono: msg.telefono,
         role: 'user',
         content: msg.texto,
@@ -177,20 +177,20 @@ app.post('/webhook', async (req, res) => {
       });
 
       // 3. Comprobar si la IA está pausada para este chat
-      const isPaused = isChatAiPaused(msg.telefono);
+      const isPaused = await isChatAiPaused(msg.telefono);
       if (isPaused) {
         console.log(`⏸️ IA en pausa para ${msg.telefono}. Registrado en CRM sin respuesta automática.`);
         continue;
       }
 
       // 4. Obtener historial para contexto de Gemini
-      const historial = getChatHistory(msg.telefono, 30);
+      const historial = await getChatHistory(msg.telefono, 30);
 
       // 5. Generar respuesta con Gemini
       const respuestaIA = await generateAiReply(msg.texto, historial);
 
       // 6. Guardar respuesta del asistente
-      saveMessage({
+      await saveMessage({
         telefono: msg.telefono,
         role: 'assistant',
         content: respuestaIA,
@@ -211,13 +211,13 @@ app.post('/webhook', async (req, res) => {
 // -------------------------------------------------------------
 // Autenticación API
 // -------------------------------------------------------------
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) {
     return res.status(400).json({ detail: 'Faltan credenciales' });
   }
 
-  const user = verifyAdminCredentials(username, password);
+  const user = await verifyAdminCredentials(username, password);
   if (!user) {
     return res.status(401).json({ detail: 'Usuario o contraseña incorrectos' });
   }
@@ -241,9 +241,9 @@ app.post('/api/login', (req, res) => {
   });
 });
 
-app.post('/login', (req, res) => {
+app.post('/login', async (req, res) => {
   const { username, password } = req.body || {};
-  const user = verifyAdminCredentials(username, password);
+  const user = await verifyAdminCredentials(username, password);
   if (!user) {
     return res.redirect('/login?error=1');
   }
@@ -260,7 +260,7 @@ app.post('/login', (req, res) => {
   return res.redirect('/admin');
 });
 
-app.get('/api/me', (req, res) => {
+app.get('/api/me', async (req, res) => {
   const token = req.cookies?.[COOKIE_NAME];
   if (!token) {
     return res.status(401).json({ detail: 'No autenticado' });
@@ -269,7 +269,7 @@ app.get('/api/me', (req, res) => {
   if (!username) {
     return res.status(401).json({ detail: 'Sesión expirada' });
   }
-  const user = getAdminByUsername(username);
+  const user = await getAdminByUsername(username);
   if (!user) {
     return res.status(401).json({ detail: 'Usuario no encontrado' });
   }
@@ -290,14 +290,14 @@ app.all(['/logout', '/api/logout'], (req, res) => {
 // -------------------------------------------------------------
 // Rutas del CRM (Protegidas) — Compatibles con Frontend React
 // -------------------------------------------------------------
-app.get(['/admin/chats', '/api/chats'], requireAdmin, (req, res) => {
-  const chats = getActiveChats();
+app.get(['/admin/chats', '/api/chats'], requireAdmin, async (req, res) => {
+  const chats = await getActiveChats();
   res.json(chats);
 });
 
-app.get(['/admin/historial/:telefono', '/api/historial/:telefono'], requireAdmin, (req, res) => {
+app.get(['/admin/historial/:telefono', '/api/historial/:telefono'], requireAdmin, async (req, res) => {
   const { telefono } = req.params;
-  const historial = getChatHistory(telefono, 1000);
+  const historial = await getChatHistory(telefono, 1000);
   res.json(historial);
 });
 
@@ -308,7 +308,7 @@ app.post(['/admin/enviar', '/api/enviar'], requireAdmin, async (req, res) => {
   }
 
   // Guardar mensaje manual del asesor en la base de datos
-  saveMessage({
+  await saveMessage({
     telefono,
     role: 'assistant',
     content: mensaje,
@@ -324,26 +324,26 @@ app.post(['/admin/enviar', '/api/enviar'], requireAdmin, async (req, res) => {
   return res.json({ status: 'ok' });
 });
 
-app.post(['/admin/toggle-ia', '/api/toggle-ia'], requireAdmin, (req, res) => {
+app.post(['/admin/toggle-ia', '/api/toggle-ia'], requireAdmin, async (req, res) => {
   const { telefono } = req.body || {};
   if (!telefono) {
     return res.status(400).json({ detail: 'Falta el teléfono' });
   }
 
-  const estadoActual = isChatAiPaused(telefono);
+  const estadoActual = await isChatAiPaused(telefono);
   const nuevoEstado = !estadoActual;
-  setChatAiPaused(telefono, nuevoEstado);
+  await setChatAiPaused(telefono, nuevoEstado);
 
   return res.json({ status: 'ok', is_ai_paused: nuevoEstado });
 });
 
-app.post(['/admin/cambiar-password', '/api/cambiar-password'], requireAdmin, (req, res) => {
+app.post(['/admin/cambiar-password', '/api/cambiar-password'], requireAdmin, async (req, res) => {
   const { password } = req.body || {};
   if (!password || password.length < 4) {
     return res.status(400).json({ detail: 'Contraseña inválida (mínimo 4 caracteres)' });
   }
 
-  updateAdminPassword(req.user.username, password);
+  await updateAdminPassword(req.user.username, password);
   return res.json({ status: 'ok', message: 'Contraseña actualizada con éxito' });
 });
 
