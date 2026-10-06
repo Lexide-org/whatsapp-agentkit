@@ -3,11 +3,11 @@ import { TwilioProvider } from './twilio.js';
 import { MetaProvider } from './meta.js';
 
 export function getWhatsAppProvider() {
-  const providerType = (process.env.WHATSAPP_PROVIDER || 'twilio').toLowerCase();
+  const providerType = (process.env.WHATSAPP_PROVIDER || 'meta').toLowerCase();
 
-  if (providerType === 'meta') {
-    return new MetaProvider();
+  if (providerType === 'twilio') {
+    return new TwilioProvider();
   }
 
-  return new TwilioProvider();
+  return new MetaProvider();
 }

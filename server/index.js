@@ -138,12 +138,28 @@ app.get('/sw.js', (req, res) => {
 // Webhooks de WhatsApp (Twilio / Meta)
 // -------------------------------------------------------------
 app.get('/webhook', (req, res) => {
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
+  const verifyToken = process.env.META_VERIFY_TOKEN || 'agentkit-verify';
+
+  // Verificación oficial de Meta Cloud API
+  if (mode === 'subscribe') {
+    if (token === verifyToken) {
+      console.log('✅ Webhook de Meta verificado con éxito');
+      return res.status(200).send(String(challenge));
+    }
+    console.warn(`❌ Token de verificación de Meta inválido: recibido "${token}", esperado "${verifyToken}"`);
+    return res.status(403).send('Forbidden: Token de verificación incorrecto');
+  }
+
   if (typeof provider.validateWebhook === 'function') {
-    const challenge = provider.validateWebhook(req.query);
-    if (challenge !== null && challenge !== undefined) {
-      return res.send(String(challenge));
+    const customChallenge = provider.validateWebhook(req.query);
+    if (customChallenge !== null && customChallenge !== undefined) {
+      return res.send(String(customChallenge));
     }
   }
+
   return res.json({ status: 'ok', service: 'tabersil-chatbots' });
 });
 
