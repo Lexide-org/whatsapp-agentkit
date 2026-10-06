@@ -12,7 +12,8 @@
     "start": "node server/index.js",
     "preview": "vite preview",
     "client:reset": "node scripts/reset-client.js",
-    "client:wipe": "node scripts/reset-client.js --restore-template"
+    "client:wipe": "node scripts/reset-client.js --restore-template",
+    "test:chat": "node scripts/test-chat.js"
   },
   "keywords": [
     "whatsapp",
