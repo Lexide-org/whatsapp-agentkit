@@ -4,6 +4,9 @@
   "description": "Tabersil Chatbots - WhatsApp AI & CRM Platform (Node.js + React)",
   "main": "server/index.js",
   "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "dev:server": "node server/index.js",
     "dev:client": "vite",
