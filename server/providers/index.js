@@ -3,11 +3,25 @@ import { TwilioProvider } from './twilio.js';
 import { MetaProvider } from './meta.js';
 
 export function getWhatsAppProvider() {
-  const providerType = (process.env.WHATSAPP_PROVIDER || 'meta').toLowerCase();
+  const envProvider = (process.env.WHATSAPP_PROVIDER || '').toLowerCase();
 
-  if (providerType === 'twilio') {
+  if (envProvider === 'meta') {
+    return new MetaProvider();
+  }
+
+  if (envProvider === 'twilio') {
     return new TwilioProvider();
   }
 
-  return new MetaProvider();
+  // Si no se especifica WHATSAPP_PROVIDER, inferir según las credenciales presentes:
+  if (process.env.TWILIO_ACCOUNT_SID) {
+    return new TwilioProvider();
+  }
+
+  if (process.env.META_ACCESS_TOKEN) {
+    return new MetaProvider();
+  }
+
+  // Por defecto usar Twilio
+  return new TwilioProvider();
 }

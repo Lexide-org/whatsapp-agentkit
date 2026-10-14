@@ -1,10 +1,18 @@
 // server/providers/meta.js — Adaptador de WhatsApp para Meta Cloud API
 export class MetaProvider {
   constructor() {
+    this.name = 'meta';
     this.accessToken = process.env.META_ACCESS_TOKEN;
     this.phoneNumberId = process.env.META_PHONE_NUMBER_ID;
     this.verifyToken = process.env.META_VERIFY_TOKEN || 'agentkit-verify';
     this.apiVersion = 'v21.0';
+  }
+
+  /**
+   * Respuesta estándar esperada por Meta para confirmar recepción de webhook.
+   */
+  sendWebhookResponse(res) {
+    return res.status(200).json({ status: 'ok' });
   }
 
   /**

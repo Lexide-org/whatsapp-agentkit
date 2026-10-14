@@ -137,7 +137,7 @@ app.get('/sw.js', (req, res) => {
 // -------------------------------------------------------------
 // Webhooks de WhatsApp (Twilio / Meta)
 // -------------------------------------------------------------
-app.get('/webhook', (req, res) => {
+app.get('/webhook', async (req, res) => {
   const mode = req.query['hub.mode'] || req.query['hub_mode'];
   const token = req.query['hub.verify_token'] || req.query['hub_verify_token'];
   const challenge = req.query['hub.challenge'] || req.query['hub_challenge'];
@@ -162,7 +162,50 @@ app.get('/webhook', (req, res) => {
     }
   }
 
-  return res.json({ status: 'ok', service: 'tabersil-chatbots' });
+  // Soporte de respaldo si Twilio fue configurado como HTTP GET
+  if (req.query.From && (req.query.Body || req.query.NumMedia)) {
+    try {
+      const mensajes = await provider.parseWebhook(req.query);
+      for (const msg of mensajes) {
+        if (msg.esPropio) continue;
+        if (msg.mensajeId && (await isMessageDuplicate(msg.mensajeId))) continue;
+        await saveMessage({
+          telefono: msg.telefono,
+          role: 'user',
+          content: msg.texto,
+          mensajeId: msg.mensajeId,
+          urlMedia: msg.urlMedia,
+          esImagen: msg.esImagen,
+          esAudio: msg.esAudio,
+          esDocumento: msg.esDocumento,
+          enviadoPorAdmin: false
+        });
+        const isPaused = await isChatAiPaused(msg.telefono);
+        if (isPaused) continue;
+        const historial = await getChatHistory(msg.telefono, 30);
+        const respuestaIA = await generateAiReply(msg.texto, historial);
+        await saveMessage({
+          telefono: msg.telefono,
+          role: 'assistant',
+          content: respuestaIA,
+          enviadoPorAdmin: false
+        });
+        await provider.sendMessage(msg.telefono, respuestaIA);
+      }
+      if (typeof provider.sendWebhookResponse === 'function') {
+        return provider.sendWebhookResponse(res);
+      }
+      return res.json({ status: 'ok' });
+    } catch (err) {
+      console.error('❌ Error procesando webhook GET:', err);
+    }
+  }
+
+  return res.json({
+    status: 'ok',
+    service: 'tabersil-chatbots',
+    provider: provider.name || 'twilio'
+  });
 });
 
 app.post('/webhook', async (req, res) => {
@@ -219,9 +262,17 @@ app.post('/webhook', async (req, res) => {
       await provider.sendMessage(msg.telefono, respuestaIA);
     }
 
+    if (typeof provider.sendWebhookResponse === 'function') {
+      return provider.sendWebhookResponse(res);
+    }
+
     return res.json({ status: 'ok' });
   } catch (err) {
     console.error('❌ Error procesando webhook:', err);
+    if (provider.name === 'twilio') {
+      res.setHeader('Content-Type', 'text/xml');
+      return res.status(500).send('<Response></Response>');
+    }
     return res.status(500).json({ error: 'Error procesando webhook' });
   }
 });
@@ -405,5 +456,5 @@ if (fs.existsSync(distPath)) {
 // Iniciar servidor
 app.listen(PORT, () => {
   console.log(`🚀 Servidor Tabersil Chatbots (Node.js) corriendo en http://127.0.0.1:${PORT}`);
-  console.log(`📡 Proveedor de WhatsApp: ${process.env.WHATSAPP_PROVIDER || 'twilio'}`);
+  console.log(`📡 Proveedor de WhatsApp activo: ${provider.name} (config: ${process.env.WHATSAPP_PROVIDER || 'auto'})`);
 });

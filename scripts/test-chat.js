@@ -7,7 +7,7 @@ import { DatabaseSync } from 'node:sqlite';
 const PORT = process.env.PORT || 8000;
 const WEBHOOK_URL = `http://localhost:${PORT}/webhook`;
 const DB_PATH = process.env.DATABASE_FILE || path.resolve(process.cwd(), 'agentkit.db');
-const PROVIDER = (process.env.WHATSAPP_PROVIDER || 'meta').toLowerCase();
+const PROVIDER = (process.env.WHATSAPP_PROVIDER || (process.env.META_ACCESS_TOKEN ? 'meta' : 'twilio')).toLowerCase();
 const DEFAULT_PHONE = (process.env.TEST_PHONE || '584121234567').replace(/^\+/, '');
 
 let db = null;
@@ -92,7 +92,11 @@ async function sendWebhookMessage(phone, text) {
   if (!response.ok) {
     throw new Error(`Servidor respondió con código ${response.status}`);
   }
-  return response.json();
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    return response.json();
+  }
+  return response.text();
 }
 
 async function startSimulator() {
