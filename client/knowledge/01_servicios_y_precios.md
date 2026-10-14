@@ -14,7 +14,8 @@
 Todos nuestros desarrollos se crean a medida según las necesidades específicas del negocio del cliente, garantizando código limpio, alto rendimiento, seguridad y soporte post-lanzamiento.
 
 ### A) Chatbots & Automatizaciones con Inteligencia Artificial
-- **Valor mínimo de partida:** Desde **$300 USD**
+- **Inversión inicial de implementación:** Desde **$300 USD** (pago único de desarrollo y puesta a punto).
+- **Mensualidad base de mantenimiento:** **$99 USD/mes** luego de que el agente esté en marcha (cubre servidores en la nube, consumo de APIs de IA, panel CRM, monitoreo 24/7 y soporte técnico continuo).
 - **Qué incluye:**
   - Integración en WhatsApp oficial (vía Twilio o Meta Cloud API).
   - Inteligencia artificial generativa con Gemini calibrada para el rubro específico.
