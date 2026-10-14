@@ -16,12 +16,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Base de conocimiento privada del cliente
-client/knowledge/*
-!client/knowledge/README.md
-!client/knowledge/.gitkeep
-knowledge/*
-!knowledge/.gitkeep
+# Base de conocimiento (archivos de referencia de conocimiento de la empresa)
+!client/knowledge/*.md
+!client/knowledge/*.txt
+!client/knowledge/*.json
 
 # Logs y archivos temporales
 *.log
@@ -46,3 +44,5 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+Update propagation flow.svg

@@ -1,19 +1,24 @@
 // server/brain.js — Conexión con Google Gemini AI (@google/genai)
 // Carga configuración dinámica y base de conocimiento desde la carpeta 'client/'
+import 'dotenv/config';
 import fs from 'node:fs';
 import path from 'node:path';
 import yaml from 'js-yaml';
 import { GoogleGenAI } from '@google/genai';
 
 let geminiClient = null;
-const apiKey = process.env.GEMINI_API_KEY;
 
-if (apiKey && apiKey !== 'dummy-key-local-development') {
-  try {
-    geminiClient = new GoogleGenAI({ apiKey });
-  } catch (err) {
-    console.warn('⚠️ No se pudo inicializar GoogleGenAI:', err.message);
+function getGeminiClient() {
+  if (geminiClient) return geminiClient;
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (apiKey && apiKey !== 'dummy-key-local-development') {
+    try {
+      geminiClient = new GoogleGenAI({ apiKey });
+    } catch (err) {
+      console.warn('⚠️ No se pudo inicializar GoogleGenAI:', err.message);
+    }
   }
+  return geminiClient;
 }
 
 /**
@@ -108,6 +113,7 @@ export function getSystemPrompt() {
     const bizContact = business.contact_email || '';
     const bizPhone = business.phone || '';
     const bizAddress = business.address || '';
+    const bizWebsite = business.website || '';
 
     const rulesList = Array.isArray(agent.rules) && agent.rules.length > 0
       ? agent.rules.map((r) => `- ${r}`).join('\n')
@@ -125,6 +131,7 @@ export function getSystemPrompt() {
 
 ## Sobre el Negocio
 ${bizDesc ? `- Descripción: ${bizDesc}` : ''}
+${bizWebsite ? `- Sitio web oficial: ${bizWebsite}` : ''}
 ${bizSchedule ? `- Horario de atención: ${bizSchedule}` : ''}
 ${bizContact ? `- Correo de contacto: ${bizContact}` : ''}
 ${bizPhone ? `- Teléfono: ${bizPhone}` : ''}
@@ -157,7 +164,8 @@ export async function generateAiReply(message, history = []) {
     return getFallbackMessage();
   }
 
-  if (!geminiClient) {
+  const client = getGeminiClient();
+  if (!client) {
     return '¡Hola! El servidor y CRM de Tabersil Chatbots están funcionando en Node.js. Para habilitar las respuestas automáticas de la IA, agrega tu GEMINI_API_KEY en el archivo .env.';
   }
 
@@ -180,7 +188,7 @@ export async function generateAiReply(message, history = []) {
   });
 
   try {
-    const response = await geminiClient.models.generateContent({
+    const response = await client.models.generateContent({
       model: 'gemini-2.5-flash',
       contents,
       config: {
