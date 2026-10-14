@@ -8,6 +8,7 @@ import fs from 'node:fs';
 
 import {
   initDb,
+  isPostgres,
   verifyAdminCredentials,
   getAdminByUsername,
   updateAdminPassword,
@@ -204,7 +205,8 @@ app.get('/webhook', async (req, res) => {
   return res.json({
     status: 'ok',
     service: 'tabersil-chatbots',
-    provider: provider.name || 'twilio'
+    provider: provider.name || 'twilio',
+    database: isPostgres ? 'postgresql' : 'sqlite'
   });
 });
 
@@ -455,6 +457,6 @@ if (fs.existsSync(distPath)) {
 
 // Iniciar servidor
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor Tabersil Chatbots (Node.js) corriendo en http://127.0.0.1:${PORT}`);
   console.log(`📡 Proveedor de WhatsApp activo: ${provider.name} (config: ${process.env.WHATSAPP_PROVIDER || 'auto'})`);
+  console.log(`💾 Base de datos activa: ${isPostgres ? 'PostgreSQL (persistente en la nube)' : 'SQLite nativo (efímero en Railway si no hay PostgreSQL conectado)'}`);
 });

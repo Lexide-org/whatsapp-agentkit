@@ -6,25 +6,53 @@ import path from 'node:path';
 
 const { Pool } = pg;
 
-const rawDbUrl = (process.env.DATABASE_URL || '').trim();
-// Detectar si la URL corresponde a PostgreSQL
-export const isPostgres = rawDbUrl.startsWith('postgres://') || rawDbUrl.startsWith('postgresql://');
+// 1. Obtener la cadena de conexión de PostgreSQL desde cualquiera de las variables posibles en Railway
+let rawDbUrl = (
+  process.env.DATABASE_URL ||
+  process.env.DATABASE_PUBLIC_URL ||
+  process.env.POSTGRES_URL ||
+  process.env.PGURL ||
+  ''
+).trim();
+
+// Normalizar URLs que provengan de SQLAlchemy (ej: postgresql+asyncpg:// o postgresql+psycopg2://)
+if (rawDbUrl.includes('+')) {
+  rawDbUrl = rawDbUrl.replace(/^postgresql\+[a-zA-Z0-9_]+:\/\//, 'postgresql://');
+}
+
+// Detectar si PostgreSQL está disponible por URL o por variables de entorno individuales de Railway
+export const isPostgres = Boolean(
+  rawDbUrl.startsWith('postgres://') ||
+  rawDbUrl.startsWith('postgresql://') ||
+  (process.env.PGHOST && process.env.PGDATABASE && process.env.PGUSER)
+);
 
 let pgPool = null;
 let sqliteDb = null;
 
 if (isPostgres) {
   // Conexión a PostgreSQL (Railway / Producción)
-  pgPool = new Pool({
-    connectionString: rawDbUrl,
-    ssl: rawDbUrl.includes('localhost') ? false : { rejectUnauthorized: false }
-  });
+  if (rawDbUrl.startsWith('postgres://') || rawDbUrl.startsWith('postgresql://')) {
+    pgPool = new Pool({
+      connectionString: rawDbUrl,
+      ssl: rawDbUrl.includes('localhost') ? false : { rejectUnauthorized: false }
+    });
+  } else {
+    pgPool = new Pool({
+      host: process.env.PGHOST,
+      port: parseInt(process.env.PGPORT || '5432', 10),
+      user: process.env.PGUSER,
+      password: process.env.PGPASSWORD,
+      database: process.env.PGDATABASE,
+      ssl: (process.env.PGHOST || '').includes('localhost') ? false : { rejectUnauthorized: false }
+    });
+  }
   console.log('🐘 Modo de base de datos: PostgreSQL (producción / Railway)');
 } else {
   // Conexión a SQLite nativo (Desarrollo local)
   const DB_PATH = process.env.DATABASE_FILE || path.resolve(process.cwd(), 'agentkit.db');
   sqliteDb = new DatabaseSync(DB_PATH);
-  console.log(`📦 Modo de base de datos: SQLite nativo (${DB_PATH})`);
+  console.log(`📦 Modo de base de datos: SQLite nativo (${DB_PATH}) — Advertencia: efímero si corre en Railway sin PostgreSQL.`);
 }
 
 /**
